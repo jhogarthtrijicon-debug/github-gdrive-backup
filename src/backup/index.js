@@ -390,25 +390,29 @@ async function runBackup(options = {}) {
     logger.info(`Incremental (delta) mode enabled — ${Object.keys(incrementalCtx.prevStateByRepo).length} repo state(s) carried forward; max chain depth ${maxChainDepth}`);
   }
 
-  let repos = options.repos
-    ? options.repos.map(r => ({ owner: { login: r.split('/')[0] }, name: r.split('/')[1] }))
-    : await gh.listRepos(owner);
+    let repos;
 
-  // Multi-org support
-  const orgsEnv = options.orgs || process.env.GITHUB_ORGS || '';
-  if (orgsEnv) {
-    const orgs = orgsEnv.split(',').map(o => o.trim()).filter(Boolean);
-    for (const org of orgs) {
-      let page = 1;
-      while (true) {
-        const orgRepos = await withRateLimitRetry(() =>
-          gh.octokit.repos.listForOrg({ org, per_page: 100, type: 'all', page }).then(r => r.data)
+  if (Array.isArray(options.repos) && options.repos.length) {
+    repos = await Promise.all(options.repos.map(async (fullName) => {
+      const parts = String(fullName).trim().split('/');
+
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        throw new Error(
+          `Invalid repository name: ${fullName}. Use owner/repository.`
         );
-        repos = repos.concat(orgRepos);
-        if (orgRepos.length < 100) break;
-        page++;
       }
-    }
+
+      const response = await withRateLimitRetry(() =>
+        gh.octokit.repos.get({
+          owner: parts[0],
+          repo: parts[1],
+        })
+      );
+
+      return response.data;
+    }));
+  } else {
+    repos = await gh.listRepos(owner);
   }
 
   logger.info(`Found ${repos.length} repositories`);
