@@ -98,7 +98,7 @@ jobs:
           INCREMENTAL_MODE:          ${{ github.event.inputs.incremental_mode || 'full' }}
           BACKUP_CONCURRENCY:        '3'
           BACKUP_TMP_DIR:            /tmp/gh-backup
-          REPOS:                     ${{ github.event.inputs.repos }}
+          REPOS:                     jhogarthtrijicon-debug/AI-Assistant
           GITHUB_ORGS:               ${{ github.event.inputs.orgs }}
           STORAGE_TARGET:            ${{ github.event.inputs.storage_target || 'drive' }}
           GITLAB_TOKEN:              ${{ github.event.inputs.gitlab_token }}
